@@ -14,18 +14,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      # Setup Java environment
       - uses: actions/setup-java@v3
         with:
           distribution: "temurin"
           java-version: ${{ matrix.jdkversion }}
           cache: "maven"
-      - name: Remove
-        run: rm target/* -f
-      - name: Build with Maven
-        run: mvn -V -B clean package --file pom.xml 
 
-      - name: upload
+      # Remove old build artifacts
+      - name: Remove old build artifacts
+        run: rm -rf target/*
+
+      # Add Maven settings and repositories
+      - name: Setup Maven settings
+        run: |
+          mkdir -p ~/.m2
+          echo "<settings><servers><server><id>enginehub-repo</id><url>https://maven.enginehub.org/repo/</url></server></servers></settings>" > ~/.m2/settings.xml
+
+      # Build with Maven, with debug info and detailed logs
+      - name: Build with Maven
+        run: mvn -V -B clean package --file pom.xml -e -X
+
+      # Upload the built artifact(s)
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: Plugin
           path: target/*.jar
+
